@@ -255,7 +255,6 @@ class Workspace {
   }
 }
 
-let pickingBuffer;
 let selectedFaceIndex = -1;
 let workspace = new Workspace();
 let button = new Button();
@@ -263,13 +262,12 @@ let mesh;
 let font;
 
 function preload() {
-  font = loadFont('/assets/ARIAL.TTF'); // sicherstellen, dass Datei vorhanden ist
+  font = loadFont('/assets/ARIAL.TTF');
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
-  pickingBuffer = createGraphics(windowWidth, windowHeight, WEBGL);
-  textFont('sans-serif'); // oder 'Arial', 'Georgia', etc.
+  textFont(font);
   createMesh();
 }
 
@@ -277,13 +275,13 @@ function createMesh() {
   // const cubeCreator = new CubeCreator(1);
   //  mesh = cubeCreator.create();
   
-//  const rhombicCreator = new RhombicDodecahedronCreator();
-//  mesh = rhombicCreator.create();
+  //  const rhombicCreator = new RhombicDodecahedronCreator();
+  //  mesh = rhombicCreator.create();
   
   const creator = new TriakisTetrahedronCreator();
   mesh = creator.create();
 
-  // Optional: Transform the cube
+  // transform the cube
   //const scale = new ScaleModifier(1, 3, 1);
   //scale.apply(mesh);
 }
@@ -292,11 +290,7 @@ function draw() {
   smooth(8);
   background(58);
   workspace.onDraw();
-  //drawPickingBuffer();
   drawMesh();
-  // drawMesh2();
-  //translate(3, 0, 0);
-  //button.onDraw();
   drawUI();
 }
 
@@ -315,15 +309,10 @@ function drawUI() {
 function drawMenuBar() {
 	fill(0);
 	noStroke();
-	rect(0, 0, windowWidth, 30);
-	
-		fill(128);
-	textSize(20);
-	text('Hello World! ArtifactForms - JS Port Prototype', 100, 100);
-}
-
-function drawNormals() {
-
+	rect(0, 0, windowWidth, 50);
+	fill(128);
+  textSize(20);
+	text('Prototype -  Simon Dietz 2025', 0, 20);
 }
 
 function drawMesh() {
@@ -333,7 +322,7 @@ function drawMesh() {
   for (let face of mesh.faces) {
     if (face.indices.length < 3) continue;
 
-    // Normale berechnen
+    // calculate face normals
     const a = mesh.vertices[face.indices[0]];
     const b = mesh.vertices[face.indices[1]];
     const c = mesh.vertices[face.indices[2]];
@@ -342,7 +331,7 @@ function drawMesh() {
     const faceNormal = ab.cross(ac).normalize();
 
     beginShape();
-    normal(faceNormal.x, faceNormal.y, faceNormal.z); // <<< LICHT funktioniert jetzt korrekt
+    normal(faceNormal.x, faceNormal.y, faceNormal.z); // light
     for (let index of face.indices) {
       const v = mesh.vertices[index];
       vertex(v.x, v.y, v.z);
@@ -353,8 +342,8 @@ function drawMesh() {
   	if(!normalsVisible)
 		return;
 
-  // Zeichne Normalen
-  stroke(0, 255, 255); // Cyan für Normale
+  // draw normals
+  stroke(0, 255, 255);
   strokeWeight(1);
   for (let face of mesh.faces) {
     if (face.indices.length < 3) continue;
@@ -367,7 +356,7 @@ function drawMesh() {
     const ac = createVector(c.x - a.x, c.y - a.y, c.z - a.z);
     const normal = ab.cross(ac).normalize();
 
-    // Mittelpunkt der Fläche
+    // face center
     let center = createVector(0, 0, 0);
     for (let index of face.indices) {
       const v = mesh.vertices[index];
@@ -375,48 +364,12 @@ function drawMesh() {
     }
     center.div(face.indices.length);
 
-    // Zeichne Linie für die Normale
+    // draw face normal
     const normalLength = 0.2;
     const endpoint = p5.Vector.add(center, p5.Vector.mult(normal, normalLength));
 
     line(center.x, center.y, center.z, endpoint.x, endpoint.y, endpoint.z);
   }
-}
-
-function drawMesh2() {
-  noStroke();
-
-  for (let i = 0; i < mesh.faces.length; i++) {
-    const face = mesh.faces[i];
-    if (face.indices.length < 3) continue;
-
-    if (i === selectedFaceIndex) fill(255, 0, 0); // Highlight Rot
-    else fill(180);
-
-    drawFace(face);
-  }
-}
-
-function drawPickingBuffer() {
-	pickingBuffer.clear();
-	pickingBuffer.background(0);
-	pickingBuffer.noStroke();
-
-	pickingBuffer.push();
-	pickingBuffer.scale(workspace.scale);
-	pickingBuffer.rotateX(workspace.rotationX);
-	pickingBuffer.rotateY(workspace.rotationY);
-
-	for (let i = 0; i < mesh.faces.length; i++) {
-		const face = mesh.faces[i];
-		if (face.indices.length < 3) continue;
-
-    // Face-ID als Farbe codieren (z.B. in R-Kanal)
-    let r = (i + 1) / 255; // +1, da 0 = kein Face
-    pickingBuffer.fill(r * 255, 0, 0);
-    drawFace(face, pickingBuffer);
-  }
-  pickingBuffer.pop();
 }
 
 function drawFace(face, gfx = null) {
@@ -442,21 +395,7 @@ function mouseWheel(event) {
 }
 
 function mouseMoved() {
-  // Mausposition im Backbuffer abfragen, p5 hat (0,0) oben links im Canvas:
-  let px = mouseX;
-  let py = mouseY;
 
-  // Korrigiere Koordinaten, falls nötig (WEBGL canvas mit Verschiebungen)
-  // p5 mit WEBGL hat origin in Canvas Mitte, evtl. Mouse Koords anpassen:
-  px = constrain(px, 0, width - 1);
-  py = constrain(py, 0, height - 1);
-
-  let c = pickingBuffer.get(px, py);
-  if (c[0] === 0) {
-    selectedFaceIndex = -1; // keine Auswahl
-  } else {
-    selectedFaceIndex = c[0] - 1; // Face Index aus rotem Kanal
-  }
 }
 
 function keyTyped() {
