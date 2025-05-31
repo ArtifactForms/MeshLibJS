@@ -262,7 +262,7 @@ let mesh;
 let font;
 
 function preload() {
-  font = loadFont('./assets/ARIAL.TTF');
+  font = loadFont('assets/ARIAL.TTF');
 }
 
 function setup() {
